@@ -1,7 +1,12 @@
 package com.akashreddy.myfancypdfinvoices.web;
 
-import com.akashreddy.myfancypdfinvoices.context.Application;
+import com.akashreddy.myfancypdfinvoices.context.MyFancyPdfInvoicesApplicationConfiguration;
 import com.akashreddy.myfancypdfinvoices.model.Invoice;
+import com.akashreddy.myfancypdfinvoices.service.InvoiceService;
+import com.akashreddy.myfancypdfinvoices.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +16,17 @@ import java.util.List;
 
 public class MyFancyPdfInvoicesServlet extends HttpServlet {
 
+    private UserService userService;
+    private InvoiceService invoiceService;
+    private ObjectMapper objectMapper;
+    @Override
+    public void init() throws ServletException {
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MyFancyPdfInvoicesApplicationConfiguration.class);
+        this.userService = ctx.getBean(UserService.class);
+        this.invoiceService = ctx.getBean(InvoiceService.class);
+        this.objectMapper = ctx.getBean(ObjectMapper.class);
+    }
+
     @Override
     protected void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws  IOException{
 
@@ -19,10 +35,10 @@ public class MyFancyPdfInvoicesServlet extends HttpServlet {
             String userId = httpServletRequest.getParameter("user_id");
             Integer amount = Integer.valueOf(httpServletRequest.getParameter("amount"));
 
-            Invoice invoice = Application.invoiceService.create(userId, amount);
+            Invoice invoice = invoiceService.create(userId, amount);
 
             httpServletResponse.setContentType("application/json; charset=UTF-8");
-            String json = Application.objectMapper.writeValueAsString(invoice);
+            String json = objectMapper.writeValueAsString(invoice);
             httpServletResponse.getWriter().print(json);
         } else {
             httpServletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -45,8 +61,8 @@ public class MyFancyPdfInvoicesServlet extends HttpServlet {
         }
         else if (httpServletRequest.getRequestURI().equalsIgnoreCase("/invoices")) {
             httpServletResponse.setContentType("application/json; charset=UTF-8");
-            List<Invoice> invoices = Application.invoiceService.findAll();
-            httpServletResponse.getWriter().print(Application.objectMapper.writeValueAsString(invoices));
+            List<Invoice> invoices = invoiceService.findAll();
+            httpServletResponse.getWriter().print(objectMapper.writeValueAsString(invoices));
         }
 
     }
